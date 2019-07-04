@@ -57,8 +57,9 @@ pipeline {
       steps {
         container('gradle') {
           sh "gradle clean build"
-          sh "export VERSION=$(jx-release-version)-$BRANCH_NAME-$BUILD_NUMBER && skaffold build -f skaffold.yaml"
-          sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$(jx-release-version)-$BRANCH_NAME-$BUILD_NUMBER"
+          sh "echo \$(jx-release-version)-$BRANCH_NAME-$BUILD_NUMBER > VERSION"
+          sh "export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml"
+          sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
           dir('./charts/preview') {
             sh "make preview"
             sh "jx preview --app $APP_NAME --dir ../.."
