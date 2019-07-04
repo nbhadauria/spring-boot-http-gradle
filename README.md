@@ -5,3 +5,6 @@ Run locally with `gradlew bootRun`
 Test via http://localhost:8080/greeting
 
 Health check at http://localhost:8080/actuator/health
+
+Test
+Fine
