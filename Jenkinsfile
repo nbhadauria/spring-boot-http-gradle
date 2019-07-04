@@ -47,7 +47,7 @@ pipeline {
         }
       }
     }
-    stage('CI Build and push snapshot') {
+    stage('CI Build and push snapshot for Dev and QA') {
       when { anyOf { branch 'dev'; branch 'qa'} }
       environment {
         PREVIEW_VERSION = "$BRANCH_NAME-$BUILD_NUMBER"
@@ -61,8 +61,8 @@ pipeline {
           sh "export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml"
           sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
           dir('./charts/preview') {
-            sh "export VERSION=`cat ../../VERSION` && make preview"
-            sh "export VERSION=`cat ../../VERSION` && jx preview --app $APP_NAME --dir ../.."
+            sh "export PREVIEW_VERSION=`cat ../../VERSION` && make preview"
+            sh "export PREVIEW_VERSION=`cat ../../VERSION` && jx preview --app $APP_NAME --dir ../.."
           }
         }
       }
