@@ -3,8 +3,8 @@
 # Declare variables to be passed into your templates.
 replicaCount: 1
 image:
-  repository: draft
-  tag: dev
+  repository: 236991009181.dkr.ecr.us-west-2.amazonaws.com/nbhadauria/spring-boot-http-gradle
+  tag: 2.0.3
   pullPolicy: IfNotPresent
 
 # define environment variables here as a map of key: value
