@@ -9,18 +9,56 @@ pipeline {
     DOCKER_REGISTRY_ORG = 'nbhadauria'
   }
   stages {
-    stage('CI Build and push snapshot') {
-      when { anyOf { branch 'PR-*'; branch 'feature*'; branch 'dev'; branch 'qa'} }
+    stage('CI Build and push snapshot for Pull Request') {
+      when { branch 'PR-*'}
       environment {
-        PREVIEW_VERSION = "0.0.0-SNAPSHOT-$BRANCH_NAME-$BUILD_NUMBER"
+        PREVIEW_VERSION = "$BRANCH_NAME-$BUILD_NUMBER"
         PREVIEW_NAMESPACE = "$APP_NAME-$BRANCH_NAME".toLowerCase()
         HELM_RELEASE = "$PREVIEW_NAMESPACE".toLowerCase()
       }
       steps {
         container('gradle') {
           sh "gradle clean build"
-          sh "export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml"
-          sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"
+          sh "export VERSION=$BRANCH_NAME-$BUILD_NUMBER && skaffold build -f skaffold.yaml"
+          sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$BRANCH_NAME-$BUILD_NUMBER"
+          dir('./charts/preview') {
+            sh "make preview"
+            sh "jx preview --app $APP_NAME --dir ../.."
+          }
+        }
+      }
+    }
+    stage('CI Build and push snapshot for feature branches') {
+      when { branch 'feature*'}
+      environment {
+        PREVIEW_VERSION = "$BRANCH_NAME-$BUILD_NUMBER"
+        PREVIEW_NAMESPACE = "$APP_NAME-$BRANCH_NAME".toLowerCase()
+        HELM_RELEASE = "$PREVIEW_NAMESPACE".toLowerCase()
+      }
+      steps {
+        container('gradle') {
+          sh "gradle clean build"
+          sh "export VERSION=$BRANCH_NAME-$BUILD_NUMBER && skaffold build -f skaffold.yaml"
+          sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$BRANCH_NAME-$BUILD_NUMBER"
+          dir('./charts/preview') {
+            sh "make preview"
+            sh "jx preview --app $APP_NAME --dir ../.."
+          }
+        }
+      }
+    }
+    stage('CI Build and push snapshot') {
+      when { anyOf { branch 'dev'; branch 'qa'} }
+      environment {
+        PREVIEW_VERSION = "$BRANCH_NAME-$BUILD_NUMBER"
+        PREVIEW_NAMESPACE = "$APP_NAME-$BRANCH_NAME".toLowerCase()
+        HELM_RELEASE = "$PREVIEW_NAMESPACE".toLowerCase()
+      }
+      steps {
+        container('gradle') {
+          sh "gradle clean build"
+          sh "export VERSION=$(jx-release-version)-$BRANCH_NAME-$BUILD_NUMBER && skaffold build -f skaffold.yaml"
+          sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$(jx-release-version)-$BRANCH_NAME-$BUILD_NUMBER"
           dir('./charts/preview') {
             sh "make preview"
             sh "jx preview --app $APP_NAME --dir ../.."
