@@ -12,15 +12,15 @@ pipeline {
     stage('CI Build and push snapshot for Pull Request') {
       when { branch 'PR-*'}
       environment {
-        PREVIEW_VERSION = "$BRANCH_NAME-$BUILD_NUMBER"
+        PREVIEW_VERSION = "0.0.0-$BRANCH_NAME-$BUILD_NUMBER"
         PREVIEW_NAMESPACE = "$APP_NAME-$BRANCH_NAME".toLowerCase()
         HELM_RELEASE = "$PREVIEW_NAMESPACE".toLowerCase()
       }
       steps {
         container('gradle') {
           sh "gradle clean build"
-          sh "export VERSION=$BRANCH_NAME-$BUILD_NUMBER && skaffold build -f skaffold.yaml"
-          sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$BRANCH_NAME-$BUILD_NUMBER"
+          sh "export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml"
+          sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"
           dir('./charts/preview') {
             sh "make preview"
             sh "jx preview --app $APP_NAME --dir ../.."
@@ -31,15 +31,15 @@ pipeline {
     stage('CI Build and push snapshot for feature branches') {
       when { branch 'feature*'}
       environment {
-        PREVIEW_VERSION = "$BRANCH_NAME-$BUILD_NUMBER"
+        PREVIEW_VERSION = "0.0.0-$BRANCH_NAME-$BUILD_NUMBER"
         PREVIEW_NAMESPACE = "$APP_NAME-$BRANCH_NAME".toLowerCase()
         HELM_RELEASE = "$PREVIEW_NAMESPACE".toLowerCase()
       }
       steps {
         container('gradle') {
           sh "gradle clean build"
-          sh "export VERSION=$BRANCH_NAME-$BUILD_NUMBER && skaffold build -f skaffold.yaml"
-          sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$BRANCH_NAME-$BUILD_NUMBER"
+          sh "export VERSION=$PREVIEW_VERSION && && skaffold build -f skaffold.yaml"
+          sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION"
           dir('./charts/preview') {
             sh "make preview"
             sh "jx preview --app $APP_NAME --dir ../.."
@@ -61,8 +61,8 @@ pipeline {
           sh "export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml"
           sh "jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)"
           dir('./charts/preview') {
-            sh "make preview"
-            sh "jx preview --app $APP_NAME --dir ../.."
+            sh "export VERSION=`cat ../../VERSION` && make preview"
+            sh "export VERSION=`cat ../../VERSION` && jx preview --app $APP_NAME --dir ../.."
           }
         }
       }
